@@ -115,15 +115,6 @@ class Period(Model):
     def get_period(cls, pname):
         return cls.objects.get_or_create(name=pname)[0]
 
-#
-#class IBarCollection(Model):
-#    """
-#    Model that encapsulates a certain set of instrument data points (bars, `IBar`s)
-#    """
-#
-#    instrument      = ForeignKey(to=Instrument, db_constraint=False)
-#    period          = ForeignKey(to=Period)
-#
 
 class IBar(Model):
     """

@@ -1,22 +1,29 @@
 import datetime
+from model.models import Instrument
+import numpy as np
 
 __author__ = 'Caner'
+
+class InstrumentDataNotFoundException(BaseException):
+    pass
+
 
 class Tester:
     """
     The ``Tester`` class runs a backtest of a given instrument in a given time frame
     """
 
-    instrument      = None
+    configuration   = None
     start_datetime  = None
     end_datetime    = None
+    price_matrix    = None
 
-    def __init__(self, instrument, start_dt, end_dt, period):
+    def __init__(self, configuration, start_dt, end_dt, period):
         """
         Constructor method for the ``Tester`` class
 
-        :param instrument: the instrument for which the backtest will run
-        :type instrument: core.models.Instrument
+        :param configuration: TesterConfiguration object, initialization parameters of the instruments
+        :type configuration: core.backtest.TesterConfiguration
 
         :param start_dt: the start date time, defaults to a time in the distant past. If the available time is after
         the specified start time, the backtest will start from the earliest record available
@@ -29,15 +36,23 @@ class Tester:
         :param period: the period for the instrument data that the backtest will be based on
         :type period: core.models.period
         """
-        self.instrument = instrument
+        self.instrument = configuration
         # Start time and end time default to 1960 (way back) and 2050 (in distant future)
         self.start_datetime  = datetime.datetime(1960,01,01,00,00,00) if not start_dt else start_dt
         self.end_datetime    = datetime.datetime(2050,12,31,23,59,00) if not end_dt   else end_dt
         self.period = period
 
-        # instrument.get_collection_for_period(period)
+        # Retrieve price collections for each instrument
+        price_collections = []
+        for i in configuration.instruments:
+            assert isinstance(i, Instrument)
+            coll = i.get_bar_collection_timeframe(self.period, self.start_datetime, self.end_datetime)
+            if not coll:
+                raise InstrumentDataNotFoundException("Data for one of the requested instruments: %s, is not available. Backtest cannot run" % i.name)
+            price_collections.append(np.array(coll))
 
-        pass
+        # TODO: make them all into a matrix
+
 
     def run(self):
         """
@@ -45,6 +60,43 @@ class Tester:
 
         :rtype: TesterResult
         """
+
+
+class IllegalArgumentException(BaseException):
+    pass
+
+
+class TesterConfiguration():
+    """
+    Configuration object for the backtest (`Tester`)
+    """
+    instruments = [] # list object that includes the instrument objects
+    weights     = [] # portfolio weights
+
+    def __init__(self, instruments=None, weights=None):
+        """
+        Constructor, fails if the instruments or weights are null, their dimensions don't match, or the absval of weights
+        does not add up to one (abs due to the fact that shortselling is allowed)
+
+        :param instruments: a list of the instruments (`Instrument` instantiations) from which the backtest portfolio
+        will be constructed
+        :type instruments: list
+        :param weights: the portfolio weights (as floating point numbers < 1) of the instruments in the portfolio. The numbers
+        may include negative numbers (> -1) standing for shortselling
+        :type weights: list
+        """
+        if instruments is None or weights is None:
+            raise IllegalArgumentException("Arguments of type None are not allowed in TesterConfiguration")
+        if len(instruments) != len(weights):
+            raise IllegalArgumentException("Number of weights and instruments must match")
+
+        arr = np.array(weights)
+        if np.sum(np.absolute(arr)) > 1:
+            raise IllegalArgumentException("The weights must add up to 1!")
+
+        self.instruments = instruments
+        self.weights     = weights
+
 
 class TesterResult():
     """
