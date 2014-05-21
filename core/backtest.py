@@ -36,7 +36,7 @@ class Tester:
         :param period: the period for the instrument data that the backtest will be based on
         :type period: core.models.period
         """
-        self.instrument = configuration
+        self.configuration = configuration
         # Start time and end time default to 1960 (way back) and 2050 (in distant future)
         self.start_datetime  = datetime.datetime(1960,01,01,00,00,00) if not start_dt else start_dt
         self.end_datetime    = datetime.datetime(2050,12,31,23,59,00) if not end_dt   else end_dt
@@ -44,6 +44,9 @@ class Tester:
 
         # Retrieve price collections for each instrument
         price_collections = []
+
+        # todo: must implement support for non-matching time frames
+
         for i in configuration.instruments:
             assert isinstance(i, Instrument)
             coll = i.get_bar_collection_timeframe(self.period, self.start_datetime, self.end_datetime)
@@ -51,20 +54,37 @@ class Tester:
                 raise InstrumentDataNotFoundException("Data for one of the requested instruments: %s, is not available. Backtest cannot run" % i.name)
             price_collections.append(np.array(coll))
 
-        # TODO: make them all into a matrix
+        self._prices = price_collections
 
 
     def run(self):
         """
         Runs the backtest and provides the results
 
+        .. warning:: no drawdown calculation, no support for short-sell
         :rtype: TesterResult
         """
+        w = np.array(self.configuration.weights)
+        try:
+            price_matrix = np.vstack(self._prices).T
+
+            # pfolio price vector
+            pfolio = np.sum(w * price_matrix, axis=1)
+
+            result = TesterResult()
+            result._min_nominal = np.min(pfolio)
+            result._max_nominal = np.min(pfolio)
+            result._return_pct  = (pfolio[-1] - pfolio[0]) / pfolio[0]
+            result._return_nominal = pfolio[-1] - pfolio[0]
+
+            return result
+        except:
+            return None
+
 
 
 class IllegalArgumentException(BaseException):
     pass
-
 
 class TesterConfiguration():
     """
@@ -97,15 +117,14 @@ class TesterConfiguration():
         self.instruments = instruments
         self.weights     = weights
 
-
 class TesterResult():
     """
     Backtest results
     """
-    return_pct          = 0
-    return_nominal      = 0
-    max_drawdown_pct    = 0
-    min_nominal         = 0
+    _return_pct          = 0
+    _return_nominal      = 0
+    _max_nominal         = 0
+    _min_nominal         = 0
 
     def __init__(self, **kwargs):
         """
