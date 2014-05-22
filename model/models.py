@@ -59,6 +59,9 @@ class Instrument(Model):
                                     .order_by("start_time").all()
         pass
 
+    @classmethod
+    def get_instrument(cls, inst):
+        return cls.objects.get(name=inst)
 
 
 
