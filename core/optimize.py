@@ -146,7 +146,7 @@ class KnownInstrumentOptimizationProblem:
 
         retmx = A / np.vstack((A[0].astype(float), A[:-1].astype(float))) -1
 
-        ret_vc = np.mean(retmx, axis=0)
+        ret_vc = np.array(np.mean(retmx, axis=0))[0]
         cov_mx = np.cov(retmx, rowvar=0)
 
         self._config = OptimizerConfiguration(cov_mx, ret_vc)

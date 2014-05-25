@@ -52,6 +52,7 @@ class Tester:
         for i in configuration.instruments:
             assert isinstance(i, Instrument)
             coll = i.get_bar_collection_timeframe(self.period, self.start_datetime, self.end_datetime)
+            coll = map(lambda x: x.close, coll) #extract only closing prices
             if not coll:
                 raise InstrumentDataNotFoundException("Data for one of the requested instruments: %s, is not available. Backtest cannot run" % i.name)
             price_collections.append(np.array(coll))
