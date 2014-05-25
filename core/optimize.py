@@ -42,7 +42,7 @@ class Optimizer:
         self._config = config
         self._policy = policy
 
-    def optimize(self):
+    def optimize(self, **kwargs):
         """
         Solve the optimization problem and return the resulting OptimizerResult object
 
@@ -50,18 +50,48 @@ class Optimizer:
         :rtype: OptimizerResult
         """
 
-        return self._policy.optimize(self._config._cov_matrix, self._config._ret_vector)
+        return self._policy.optimize(self._config._cov_matrix, self._config._ret_vector, **kwargs)
 
 
 
 class OptimizerConfiguration:
+    """
+    Class for encapsulating the "configuration" of an optimizer. The configuration includes the covariance
+    matrix and the returns vector. The class has an attribute for each of these elements along with a
+    constructor method expecting the same.
+    """
 
     _cov_matrix = None
     _ret_vector = None
 
     def __init__(self, cov_matrix, ret_vector):
-        assert isinstance(cov_matrix, np.array)
-        assert isinstance(ret_vector, np.array)
+        """
+        Constructor method for the ``OptimizerConfiguration`` class.
+
+        :param cov_matrix: the covariance matrix for each of the instruments. If there are N instruments on which
+            a portfolio optimization must be performed, this variable must be a matrix of NxN. The matrix must be
+            square and symmetric
+        :type cov_matrix: numpy.array
+
+        :param ret_vector: the mean returns vector for each of the instruments. If there are N instruments on which
+            portfolio optimization must be performed, this variable must be a matrix of 1xN or vector of N elements.
+        :type ret_vector: numpy.array
+
+        :returns: the configuration object
+        :rtype: OptimizerConfiguration
+        """
+        # assert covariance matrix is square
+        s = np.shape(cov_matrix)
+        assert s[0] == s[1]
+
+        # infer number of instruments from cov matrix
+        n = s[0]
+
+        # assert the cov matrix is symmetric
+        assert np.allclose(cov_matrix, cov_matrix.T)
+
+        # assert the number of elements in the returns vector equal to N
+        assert n == np.shape(ret_vector)[0]
 
         self._cov_matrix = cov_matrix
         self._ret_vector = ret_vector
@@ -176,7 +206,7 @@ class OptimizerResult:
         :rtype: str
         """
         dc = {
-            "weights": self._weights,
+            "weights": list(self._weights),
             "risk": self._risk,
             "return": self._return,
             "is_optimal": self._is_optimal

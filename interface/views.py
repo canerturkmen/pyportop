@@ -11,8 +11,10 @@ from django.http import HttpResponse
 
 # Create your views here.
 from django.utils import simplejson as json
+from django.views.decorators.csrf import csrf_exempt
 from model.models import Period
 
+@csrf_exempt
 def backtest(req):
     """
     View controller for the REST API implementation of the backtest function.
@@ -58,7 +60,7 @@ def backtest(req):
 
     return HttpResponse(result.stringify(), mimetype="application/json")
 
-
+@csrf_exempt
 def optimize(req):
     """
     View controller for the REST API implementation of the portfolio optimization function. The current API
@@ -73,7 +75,10 @@ def optimize(req):
         :jsonparam array covariance: the covariance matrix, must be given as an array of arrays, with each array
             representing a row of the covariance matrix. The matrix must be a square matrix of at least 2x2
         :jsonparam array returns: array of floats, each pertaining to the return of a certain instrument
-
+        :jsonparam float min_return: for the constrained return optimization problem, a minimum acceptable return for
+            the portfolio must be presented. As of the current version of the software, this is the only "policy" the
+            optimizer works with. As such, this parameter is mandatory and must be provided in order for the
+            interface to respond.
 
         **Example request**:
 
@@ -107,10 +112,14 @@ def optimize(req):
     cov_mx = np.array(data.get("covariance"))
     ret_vc = np.array(data.get("returns"))
 
-    config = OptimizerConfiguration(cov_mx, ret_vc)
-    policy = ConstrainedReturnOptimizationPolicy()
+    if data.get("min_return"):
+        policy = ConstrainedReturnOptimizationPolicy()
+        config = OptimizerConfiguration(cov_mx, ret_vc)
 
-    opt = Optimizer(config, policy)
-    soln = opt.optimize()
+        opt = Optimizer(config, policy)
+        soln = opt.optimize(min_return = data.get("min_return"))
 
-    return HttpResponse(soln.to_json(), mimetype="application/json")
+        return HttpResponse(soln.to_json(), mimetype="application/json")
+    else:
+        # normally other policies should appear here
+        return HttpResponse("You must provide a 'min_return' parameter", mimetype="application/json")

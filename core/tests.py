@@ -1,4 +1,5 @@
 import random
+from core.optimize import OptimizerConfiguration
 from django.test import TestCase
 from django.utils.timezone import utc
 from model.models import *
@@ -51,3 +52,38 @@ class BacktestTest(TestCase):
         result = self._tester.run()
 
         self.assertIsInstance(result, TesterResult)
+
+
+class OptimizerConfigurationTest(TestCase):
+    # Test the following cases:
+    # non-square matrix
+    # non-symmetric matrix
+    # return vector and matrix don't match in shape
+    # good configuration
+
+    def test_nonsquare_matrix(self):
+        cov_matrix = np.array([[1,2,3],[3,4,5]])
+        ret_vector = np.array([1,4,5])
+        self.assertRaises(AssertionError, OptimizerConfiguration, cov_matrix, ret_vector)
+
+    def test_nonsymmetric_matrix(self):
+        cov_matrix = np.array([[1,2,3],[3,4,5], [4,5,6]])
+        ret_vector = np.array([1,4,5])
+        self.assertRaises(AssertionError, OptimizerConfiguration, cov_matrix, ret_vector)
+
+    def test_nonmatching_dimensions(self):
+        cov_matrix = np.array([[1,2,3],[3,4,5], [4,5,6]])
+        ret_vector = np.array([1,4])
+        self.assertRaises(AssertionError, OptimizerConfiguration, cov_matrix, ret_vector)
+
+    def test_normal_conditions(self):
+        cov_matrix = np.array([[1,2,3],[2,4,5], [3,5,6]])
+        ret_vector = np.array([1,4,5])
+        oc = OptimizerConfiguration(cov_matrix, ret_vector)
+        self.assertIsNotNone(oc)
+
+#class OptimizerTest(TestCase):
+#    # Test the Optimizer itself
+#
+#    _covmx = None # covariance matrix
+#    _

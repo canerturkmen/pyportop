@@ -314,11 +314,127 @@ _min_nominal    The minimum value the portfolio drops to during the timespan</di
 </dd></dl>
 
 <span class="target" id="module-core.optimize"></span><p>Module includes the optimization related objects</p>
+<dl class="class">
+<dt id="core.optimize.ConstrainedReturnOptimizationPolicy">
+<em class="property">class </em><tt class="descclassname">core.optimize.</tt><tt class="descname">ConstrainedReturnOptimizationPolicy</tt><a class="reference internal" href="_modules/core/optimize.html#ConstrainedReturnOptimizationPolicy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.optimize.ConstrainedReturnOptimizationPolicy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Strategy design pattern-like class inheriting from the abstract <tt class="docutils literal"><span class="pre">OptimizationPolicy</span></tt> class (which is
+essentially equivalent to a Java interface</p>
+<dl class="method">
+<dt id="core.optimize.ConstrainedReturnOptimizationPolicy.optimize">
+<tt class="descname">optimize</tt><big>(</big><em>cov</em>, <em>ret</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/core/optimize.html#ConstrainedReturnOptimizationPolicy.optimize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.optimize.ConstrainedReturnOptimizationPolicy.optimize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Optimization function that solves the convex quadratic optimization problem for the
+constrained return (minimum return) portfolio optimization problem.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>cov</strong> (<em>numpy.array</em>) &#8211; the covariance matrix</li>
+<li><strong>ret</strong> (<em>numpy.array</em>) &#8211; the returns vector</li>
+<li><strong>**kwargs</strong> &#8211; <p>other keyword arguments, for <tt class="docutils literal"><span class="pre">ConstrainedReturnOptimizationPolicy</span></tt> the keyword <tt class="docutils literal"><span class="pre">min_return</span></tt>
+must be provided with a value of type float</p>
+</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><p class="first">numpy.array</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">the weights vector for the optimal portfolio allocation</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="core.optimize.OptimizationPolicy">
+<em class="property">class </em><tt class="descclassname">core.optimize.</tt><tt class="descname">OptimizationPolicy</tt><a class="reference internal" href="_modules/core/optimize.html#OptimizationPolicy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.optimize.OptimizationPolicy" title="Permalink to this definition">¶</a></dt>
+<dd><p>OptimizationPolicy is an abstract class that defines an interface for all portfolio optimization
+policies. The three policies intended originally were:</p>
+<ul class="simple">
+<li>risk-return weighted optimization (find an optimal spot on the efficient frontier with respect to a risk-return</li>
+</ul>
+<p>weighting factor
+- constrained risk optimization (find an optimal portfolio given a maximum risk that will be tolerated, currently
+not implemented since the problem is actually a semidefinite programming problem)
+- constrained return optimization (currently implemented, the policy that finds the minimum risk portfolio for a
+set return level on the efficient frontier)</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="core.optimize.Optimizer">
+<em class="property">class </em><tt class="descclassname">core.optimize.</tt><tt class="descname">Optimizer</tt><big>(</big><em>config</em>, <em>policy</em><big>)</big><a class="reference internal" href="_modules/core/optimize.html#Optimizer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.optimize.Optimizer" title="Permalink to this definition">¶</a></dt>
+<dd><p>The <tt class="docutils literal"><span class="pre">Optimizer</span></tt> class is the object that encapsulates the portfolio optimization logic pertaining to a
+single portfolio optimization problem. Ideally, a new <tt class="docutils literal"><span class="pre">Optimizer</span></tt> instance is instantiated for every new
+problem.</p>
+<p>Class attributes:</p>
+<ul class="simple">
+<li>_config       <tt class="docutils literal"><span class="pre">OptimizerConfiguration</span></tt> - the configuration object</li>
+<li>_policy       <tt class="docutils literal"><span class="pre">OptimizationPolicy</span></tt> - the policy object</li>
+</ul>
+<dl class="method">
+<dt id="core.optimize.Optimizer.optimize">
+<tt class="descname">optimize</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/core/optimize.html#Optimizer.optimize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.optimize.Optimizer.optimize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Solve the optimization problem and return the resulting OptimizerResult object</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">the solution of the optimization, as an OptimizerResult object</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">OptimizerResult</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="core.optimize.OptimizerConfiguration">
+<em class="property">class </em><tt class="descclassname">core.optimize.</tt><tt class="descname">OptimizerConfiguration</tt><big>(</big><em>cov_matrix</em>, <em>ret_vector</em><big>)</big><a class="reference internal" href="_modules/core/optimize.html#OptimizerConfiguration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.optimize.OptimizerConfiguration" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class for encapsulating the &#8220;configuration&#8221; of an optimizer. The configuration includes the covariance
+matrix and the returns vector. The class has an attribute for each of these elements along with a
+constructor method expecting the same.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="core.optimize.OptimizerResult">
+<em class="property">class </em><tt class="descclassname">core.optimize.</tt><tt class="descname">OptimizerResult</tt><a class="reference internal" href="_modules/core/optimize.html#OptimizerResult"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.optimize.OptimizerResult" title="Permalink to this definition">¶</a></dt>
+<dd><p>A class that encapsulates the results pertaining to a single optimization problem</p>
+<p>Class attributes:</p>
+<ul class="simple">
+<li>weights       list    The weights vector resulting from the optimization problem</li>
+<li>risk          float   The resulting risk (variance) for the optimal portfolio</li>
+<li>return        float   The resulting return for the optimal portfolio</li>
+<li>is_optimal    boolean If the resulting portfolio is optimal</li>
+</ul>
+<dl class="method">
+<dt id="core.optimize.OptimizerResult.to_json">
+<tt class="descname">to_json</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/core/optimize.html#OptimizerResult.to_json"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.optimize.OptimizerResult.to_json" title="Permalink to this definition">¶</a></dt>
+<dd><p>Translate the contents (attributes) of the class to a JSON object format</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">the JSON string</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
 <span class="target" id="module-core.views"></span><p>The <tt class="docutils literal"><span class="pre">views</span></tt> module includes the REST API function implementations for the POM software. Their corresponding
 documentation are intended as REST API documentations and may be found below.</p>
 <dl class="function">
 <dt id="core.views.backtest">
-<tt class="descclassname">core.views.</tt><tt class="descname">backtest</tt><big>(</big><em>req</em><big>)</big><a class="reference internal" href="_modules/core/views.html#backtest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.views.backtest" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">core.views.</tt><tt class="descname">backtest</tt><big>(</big><em>req</em><big>)</big><a class="headerlink" href="#core.views.backtest" title="Permalink to this definition">¶</a></dt>
 <dd><p>View controller for the REST API implementation of the backtest function.</p>
 <dl class="post">
 <dt id="post--backtest-">
@@ -358,7 +474,7 @@ documentation are intended as REST API documentations and may be found below.</p
 
 <dl class="function">
 <dt id="core.views.optimize">
-<tt class="descclassname">core.views.</tt><tt class="descname">optimize</tt><big>(</big><em>req</em><big>)</big><a class="reference internal" href="_modules/core/views.html#optimize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.views.optimize" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">core.views.</tt><tt class="descname">optimize</tt><big>(</big><em>req</em><big>)</big><a class="headerlink" href="#core.views.optimize" title="Permalink to this definition">¶</a></dt>
 <dd><p>View controller for the REST API implementation of the portfolio optimization function. The current API
 function solves a constrained return optimization problem (minimizing risk), by taking a covariance matrix
 and returns vector.</p>

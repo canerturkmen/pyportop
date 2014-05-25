@@ -1,0 +1,317 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>core.optimize &mdash; Portfolio Optimization Module (POM) v0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     'v0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Portfolio Optimization Module (POM) v0.1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../http-routingtable.html" title="HTTP Routing Table"
+             >routing table</a> |</li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Portfolio Optimization Module (POM) v0.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for core.optimize</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Module includes the optimization related objects</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">abstractmethod</span>
+<span class="kn">from</span> <span class="nn">django.utils</span> <span class="kn">import</span> <span class="n">simplejson</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">cvxopt.solvers</span> <span class="kn">import</span> <span class="n">qp</span>
+<span class="kn">import</span> <span class="nn">cvxopt</span> <span class="kn">as</span> <span class="nn">cvx</span>
+
+<span class="n">__author__</span> <span class="o">=</span> <span class="s">&#39;Caner&#39;</span>
+
+<div class="viewcode-block" id="Optimizer"><a class="viewcode-back" href="../../index.html#core.optimize.Optimizer">[docs]</a><span class="k">class</span> <span class="nc">Optimizer</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The ``Optimizer`` class is the object that encapsulates the portfolio optimization logic pertaining to a</span>
+<span class="sd">    single portfolio optimization problem. Ideally, a new ``Optimizer`` instance is instantiated for every new</span>
+<span class="sd">    problem.</span>
+
+<span class="sd">    Class attributes:</span>
+
+<span class="sd">    - _config       ``OptimizerConfiguration`` - the configuration object</span>
+<span class="sd">    - _policy       ``OptimizationPolicy`` - the policy object</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">_config</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">_policy</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">policy</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Constructor method for the Optimizer, which expects a configuration and policy object.</span>
+
+<span class="sd">        :param config: the object which encapsulates the configuration (including the covariance matrix and</span>
+<span class="sd">            return vector</span>
+<span class="sd">        :type config: OptimizerConfiguration</span>
+
+<span class="sd">        :param policy: the object which encapsulates the optimization &quot;strategy&quot;</span>
+<span class="sd">        :type policy: OptimizationPolicy</span>
+
+<span class="sd">        :returns: the constructed Optimizer</span>
+<span class="sd">        :rtype: Optimizer</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">OptimizerConfiguration</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">policy</span><span class="p">,</span> <span class="n">OptimizationPolicy</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_config</span> <span class="o">=</span> <span class="n">config</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_policy</span> <span class="o">=</span> <span class="n">policy</span>
+
+<div class="viewcode-block" id="Optimizer.optimize"><a class="viewcode-back" href="../../index.html#core.optimize.Optimizer.optimize">[docs]</a>    <span class="k">def</span> <span class="nf">optimize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Solve the optimization problem and return the resulting OptimizerResult object</span>
+
+<span class="sd">        :returns: the solution of the optimization, as an OptimizerResult object</span>
+<span class="sd">        :rtype: OptimizerResult</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_policy</span><span class="o">.</span><span class="n">optimize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="o">.</span><span class="n">_cov_matrix</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="o">.</span><span class="n">_ret_vector</span><span class="p">)</span>
+
+
+</div></div>
+<div class="viewcode-block" id="OptimizerConfiguration"><a class="viewcode-back" href="../../index.html#core.optimize.OptimizerConfiguration">[docs]</a><span class="k">class</span> <span class="nc">OptimizerConfiguration</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class for encapsulating the &quot;configuration&quot; of an optimizer. The configuration includes the covariance</span>
+<span class="sd">    matrix and the returns vector. The class has an attribute for each of these elements along with a</span>
+<span class="sd">    constructor method expecting the same.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_cov_matrix</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">_ret_vector</span> <span class="o">=</span> <span class="bp">None</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cov_matrix</span><span class="p">,</span> <span class="n">ret_vector</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Constructor method for the ``OptimizerConfiguration`` class.</span>
+
+<span class="sd">        :param cov_matrix: the covariance matrix for each of the instruments. If there are N instruments on which</span>
+<span class="sd">            a portfolio optimization must be performed, this variable must be a matrix of NxN. The matrix must be</span>
+<span class="sd">            square and symmetric</span>
+<span class="sd">        :type cov_matrix: numpy.array</span>
+
+<span class="sd">        :param ret_vector: the mean returns vector for each of the instruments. If there are N instruments on which</span>
+<span class="sd">            portfolio optimization must be performed, this variable must be a matrix of 1xN or vector of N elements.</span>
+<span class="sd">        :type ret_vector: numpy.array</span>
+
+<span class="sd">        :returns: the configuration object</span>
+<span class="sd">        :rtype: OptimizerConfiguration</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cov_matrix</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ret_vector</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">)</span>
+
+        <span class="c"># assert covariance matrix is square</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">cov_matrix</span><span class="p">)</span>
+        <span class="k">assert</span> <span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">s</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="c"># infer number of instruments from cov matrix</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c"># assert the cov matrix is symmetric</span>
+        <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">cov_matrix</span><span class="p">,</span> <span class="n">cov_matrix</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+
+        <span class="c"># assert the number of elements in the returns vector equal to N</span>
+        <span class="k">assert</span> <span class="n">n</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">ret_vector</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cov_matrix</span> <span class="o">=</span> <span class="n">cov_matrix</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ret_vector</span> <span class="o">=</span> <span class="n">ret_vector</span>
+
+</div>
+<span class="k">class</span> <span class="nc">KnownInstrumentOptimizationProblem</span><span class="p">:</span>
+    <span class="k">pass</span>
+
+
+<div class="viewcode-block" id="OptimizationPolicy"><a class="viewcode-back" href="../../index.html#core.optimize.OptimizationPolicy">[docs]</a><span class="k">class</span> <span class="nc">OptimizationPolicy</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    OptimizationPolicy is an abstract class that defines an interface for all portfolio optimization</span>
+<span class="sd">    policies. The three policies intended originally were:</span>
+
+<span class="sd">    - risk-return weighted optimization (find an optimal spot on the efficient frontier with respect to a risk-return</span>
+<span class="sd">    weighting factor</span>
+<span class="sd">    - constrained risk optimization (find an optimal portfolio given a maximum risk that will be tolerated, currently</span>
+<span class="sd">    not implemented since the problem is actually a semidefinite programming problem)</span>
+<span class="sd">    - constrained return optimization (currently implemented, the policy that finds the minimum risk portfolio for a</span>
+<span class="sd">    set return level on the efficient frontier)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span> <span class="nf">optimize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cov</span><span class="p">,</span> <span class="n">ret</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+</div>
+<div class="viewcode-block" id="ConstrainedReturnOptimizationPolicy"><a class="viewcode-back" href="../../index.html#core.optimize.ConstrainedReturnOptimizationPolicy">[docs]</a><span class="k">class</span> <span class="nc">ConstrainedReturnOptimizationPolicy</span><span class="p">(</span><span class="n">OptimizationPolicy</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Strategy design pattern-like class inheriting from the abstract ``OptimizationPolicy`` class (which is</span>
+<span class="sd">    essentially equivalent to a Java interface</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ConstrainedReturnOptimizationPolicy.optimize"><a class="viewcode-back" href="../../index.html#core.optimize.ConstrainedReturnOptimizationPolicy.optimize">[docs]</a>    <span class="k">def</span> <span class="nf">optimize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cov</span><span class="p">,</span> <span class="n">ret</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Optimization function that solves the convex quadratic optimization problem for the</span>
+<span class="sd">        constrained return (minimum return) portfolio optimization problem.</span>
+
+<span class="sd">        :param cov: the covariance matrix</span>
+<span class="sd">        :type cov: numpy.array</span>
+
+<span class="sd">        :param ret: the returns vector</span>
+<span class="sd">        :type ret: numpy.array</span>
+
+<span class="sd">        :param **kwargs: other keyword arguments, for ``ConstrainedReturnOptimizationPolicy`` the keyword ``min_return``</span>
+<span class="sd">            must be provided with a value of type float</span>
+
+<span class="sd">        :rtype: numpy.array</span>
+<span class="sd">        :returns: the weights vector for the optimal portfolio allocation</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># convert all matrices to cvxopt type matrices</span>
+        <span class="n">S</span> <span class="o">=</span> <span class="n">cvx</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">cov</span><span class="p">)</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">cov</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">q</span> <span class="o">=</span> <span class="n">cvx</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n</span><span class="p">,</span><span class="mi">1</span><span class="p">))))</span>
+
+        <span class="c"># limit portfolio to 1 and the portfolio return to .35</span>
+        <span class="n">ones</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span><span class="n">n</span><span class="p">)))</span>
+        <span class="n">A</span> <span class="o">=</span> <span class="n">cvx</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">ones</span><span class="p">,</span> <span class="n">ret</span><span class="p">)))</span>
+
+        <span class="n">b</span> <span class="o">=</span> <span class="n">cvx</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">matrix</span><span class="p">([</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;min_return&quot;</span><span class="p">)])</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+
+        <span class="c"># no short-sell ($x_i \ge 0$)</span>
+        <span class="n">G</span> <span class="o">=</span> <span class="n">cvx</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n</span><span class="p">,</span><span class="n">n</span><span class="p">)))</span>
+        <span class="n">G</span><span class="p">[::</span><span class="n">n</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="n">cvx</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n</span><span class="p">,</span><span class="mi">1</span><span class="p">))))</span>
+
+        <span class="c"># solve with cvx opt</span>
+        <span class="n">soln</span> <span class="o">=</span> <span class="n">qp</span><span class="p">(</span><span class="n">S</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">G</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">A</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+
+        <span class="c">#initialize the optimizer result object</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">OptimizerResult</span><span class="p">()</span>
+
+        <span class="n">result</span><span class="o">.</span><span class="n">_is_optimal</span> <span class="o">=</span> <span class="p">(</span><span class="n">soln</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;status&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s">&quot;optimal&quot;</span><span class="p">)</span>
+
+        <span class="n">x_opt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">soln</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">])</span>
+        <span class="n">x_opt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">x_opt</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">)))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">_weights</span> <span class="o">=</span> <span class="n">x_opt</span>
+
+
+        <span class="n">ret_calc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">x_opt</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">ret</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">_return</span> <span class="o">=</span> <span class="n">ret_calc</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="n">w_calc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">x_opt</span><span class="p">)</span>
+        <span class="n">result</span><span class="o">.</span><span class="n">_risk</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">w_calc</span> <span class="o">*</span> <span class="p">(</span><span class="n">w_calc</span> <span class="o">*</span> <span class="n">cov</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">)[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">result</span>
+
+</div></div>
+<div class="viewcode-block" id="OptimizerResult"><a class="viewcode-back" href="../../index.html#core.optimize.OptimizerResult">[docs]</a><span class="k">class</span> <span class="nc">OptimizerResult</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A class that encapsulates the results pertaining to a single optimization problem</span>
+
+<span class="sd">    Class attributes:</span>
+
+<span class="sd">    - weights       list    The weights vector resulting from the optimization problem</span>
+<span class="sd">    - risk          float   The resulting risk (variance) for the optimal portfolio</span>
+<span class="sd">    - return        float   The resulting return for the optimal portfolio</span>
+<span class="sd">    - is_optimal    boolean If the resulting portfolio is optimal</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">_weights</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">_risk</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">_return</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">_is_optimal</span> <span class="o">=</span> <span class="bp">False</span>
+
+<div class="viewcode-block" id="OptimizerResult.to_json"><a class="viewcode-back" href="../../index.html#core.optimize.OptimizerResult.to_json">[docs]</a>    <span class="k">def</span> <span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Translate the contents (attributes) of the class to a JSON object format</span>
+
+<span class="sd">        :returns: the JSON string</span>
+<span class="sd">        :rtype: str</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dc</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s">&quot;weights&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="p">,</span>
+            <span class="s">&quot;risk&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_risk</span><span class="p">,</span>
+            <span class="s">&quot;return&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_return</span><span class="p">,</span>
+            <span class="s">&quot;is_optimal&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_optimal</span>
+        <span class="p">}</span>
+
+        <span class="k">return</span> <span class="n">simplejson</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">dc</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../http-routingtable.html" title="HTTP Routing Table"
+             >routing table</a> |</li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Portfolio Optimization Module (POM) v0.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, AC Turkmen.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>
