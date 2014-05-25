@@ -79,8 +79,8 @@ class Tester:
             result = TesterResult()
             result._min_nominal = np.min(pfolio)
             result._max_nominal = np.max(pfolio)
-            result._return_pct  = (pfolio[-1] - pfolio[0]) / pfolio[0]
-            result._return_nominal = pfolio[-1] - pfolio[0]
+            result._return_pct  = ((pfolio[-1] - pfolio[0]) / pfolio[0])[0,0]
+            result._return_nominal = (pfolio[-1] - pfolio[0])[0,0]
 
             return result
         except:
@@ -135,7 +135,7 @@ class TesterResult:
     _max_nominal         = 0
     _min_nominal         = 0
 
-    def stringify(self):
+    def to_json(self):
         return simplejson.dumps({
             "return_pct": self._return_pct,
             "return_nominal": self._return_nominal,

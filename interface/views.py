@@ -4,14 +4,18 @@ documentation are intended as REST API documentations and may be found below.
 """
 
 import dateutil.parser
-from core.backtest import TesterConfiguration, Tester
+from core.backtest import TesterConfiguration, Tester, IllegalArgumentException, InstrumentDataNotFoundException
 from core.optimize import *
+from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse
 
 # Create your views here.
 from django.utils import simplejson as json
 from django.views.decorators.csrf import csrf_exempt
 from model.models import Period
+
+def throw_error_over_json(error):
+    return HttpResponse(json.dumps({"error": error}), mimetype="application/json")
 
 @csrf_exempt
 def backtest(req):
@@ -43,21 +47,34 @@ def backtest(req):
             }
     """
     data = json.loads(req.body)
-    config = TesterConfiguration(instruments=data.get("instruments"),
-                                 weights=data.get("weights"))
 
-    start_dt = dateutil.parser.parse(data.get("start-date"))
-    end_dt  = dateutil.parser.parse(data.get("end-date"))
+    try:
+        start_dt = dateutil.parser.parse(data.get("start-date"))
+        end_dt  = dateutil.parser.parse(data.get("end-date"))
+    except: #parse errors
+        return throw_error_over_json("There was a problem with parsing the dates!")
 
-    period = Period.get_period(data.get("period"))
+    try:
+        config = TesterConfiguration(instruments=data.get("instruments"),
+            weights=data.get("weights"))
 
-    # initialize the tester
-    tester = Tester(config, start_dt, end_dt, period)
+        period = Period.get_period(data.get("period"))
 
-    # run the tester
-    result = tester.run()
+        # initialize the tester
+        tester = Tester(config, start_dt, end_dt, period)
 
-    return HttpResponse(result.stringify(), mimetype="application/json")
+        # run the tester
+        result = tester.run()
+
+
+    except IllegalArgumentException:
+        return throw_error_over_json("Some data for the instrument was missing")
+    except InstrumentDataNotFoundException:
+        return throw_error_over_json("Data for one of the instruments was not found")
+    except ObjectDoesNotExist:
+        return throw_error_over_json("The instrument was not found")
+
+    return HttpResponse(result.to_json(), mimetype="application/json")
 
 @csrf_exempt
 def optimize(req):

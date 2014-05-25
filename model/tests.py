@@ -1,10 +1,11 @@
+from datetime import timedelta, datetime
 import random
 from django.utils.timezone import utc
 
 __author__ = 'Caner'
 
 from django.test import TestCase
-from models import *
+from models import Instrument, Period, IBar
 
 class InstrumentTest(TestCase):
 
