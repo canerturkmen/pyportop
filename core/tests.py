@@ -31,7 +31,7 @@ class BacktestTest(TestCase):
 
     fixtures = ["dump.json"]
     _config = None
-    _ls = ["EURUSD", "GBPJPY", "GBPUSD"]
+    _ls = ["EURUSD", "GBPUSD", "GBPJPY"]
 
 
     def test_config_initialize(self):
@@ -56,6 +56,21 @@ class BacktestTest(TestCase):
         result = self._tester.run()
 
         self.assertIsInstance(result, TesterResult)
+
+    def test_result_correct(self):
+        config = TesterConfiguration(self._ls, [.3, .3, .4])
+        a = datetime.datetime(2014,05,21,13,00,00)
+        b = datetime.datetime(2014,05,22,13,00,00)
+        self._tester = Tester(config, a, b, Period.get_period("H1"))
+        result = self._tester.run()
+
+        self.assertAlmostEqual(result._min_nominal, 1.5560, places=3)
+        self.assertAlmostEqual(result._max_nominal, 1.5588, places=3)
+        self.assertAlmostEqual(result._return_nominal, 0.0020, places=3)
+        self.assertAlmostEqual(result._return_pct, 0.0013, places=3)
+
+
+
 
 
 class OptimizerConfigurationTest(TestCase):

@@ -8,6 +8,8 @@ __author__ = 'Caner'
 class InstrumentDataNotFoundException(BaseException):
     pass
 
+class IllegalArgumentException(BaseException):
+    pass
 
 class Tester:
     """
@@ -67,16 +69,16 @@ class Tester:
         .. warning:: no drawdown calculation, no support for short-sell
         :rtype: TesterResult
         """
-        w = np.array(self.configuration.weights)
+        w = np.matrix(self.configuration.weights)
         try:
             price_matrix = np.vstack(self._prices).T
 
             # pfolio price vector
-            pfolio = np.sum(w * price_matrix, axis=1)
+            pfolio = price_matrix * w.T
 
             result = TesterResult()
             result._min_nominal = np.min(pfolio)
-            result._max_nominal = np.min(pfolio)
+            result._max_nominal = np.max(pfolio)
             result._return_pct  = (pfolio[-1] - pfolio[0]) / pfolio[0]
             result._return_nominal = pfolio[-1] - pfolio[0]
 
@@ -84,12 +86,7 @@ class Tester:
         except:
             return None
 
-
-
-class IllegalArgumentException(BaseException):
-    pass
-
-class TesterConfiguration():
+class TesterConfiguration:
     """
     Configuration object for the backtest (`Tester`)
     """
@@ -124,7 +121,7 @@ class TesterConfiguration():
         self.instruments = iobjects
         self.weights     = weights
 
-class TesterResult():
+class TesterResult:
     """
     Class for encapsulating the backtest results. The class has several attributes:
 

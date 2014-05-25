@@ -54,7 +54,6 @@ class Optimizer:
         return self._policy.optimize(self._config._cov_matrix, self._config._ret_vector, **kwargs)
 
 
-
 class OptimizerConfiguration:
     """
     Class for encapsulating the "configuration" of an optimizer. The configuration includes the covariance
