@@ -3,6 +3,7 @@ Module includes the optimization related objects
 """
 from abc import abstractmethod
 from django.utils import simplejson
+from model.models import Instrument, Period
 import numpy as np
 from cvxopt.solvers import qp
 import cvxopt as cvx
@@ -98,7 +99,73 @@ class OptimizerConfiguration:
 
 
 class KnownInstrumentOptimizationProblem:
-    pass
+    """
+    The KnownInstrumentOptimizationProblem class encapsulates an optimization problem where the
+    associated financial securities are already known to the system and some price data is
+    available in the database.
+    """
+
+    def __init__(self, inst_array, start_dt, end_dt):
+        """
+        The constructor method for the class
+
+        :param inst_array: is a list of strings that are instrument names, the portfolio optimization problem
+            will run on these instruments
+        :type inst_array: list
+
+        :param start_dt: the start datetime for which the data will be pulled, calculating optimization
+            parameters
+        :type start_dt: datetime
+
+        :param end_dt: the end datetime for which the data will be pulled, calculating optimization
+            parameters
+        :type end_dt: datetime
+        """
+
+        prices = []
+        for iname in inst_array:
+            i = Instrument.get_instrument(iname)
+            price_i = i.get_bar_collection_timeframe(Period.get_period("H1"), start_dt, end_dt)
+            price_x = map(lambda x: x.close, price_i)
+            prices.append(price_x)
+
+        z = []
+        for i in prices:
+            z.append(np.matrix(i).T)
+
+        self._p_matrix = np.hstack(z)
+
+    def prep_optimization_config(self):
+        """
+        The method prepares the optimization config, filling the internal `_config` variable by calculating
+        the covariance matrix and mean return vector for the problem with the data provided
+
+        The calculation logic was benchmarked against MATLAB financial toolbox
+        """
+        A = self._p_matrix
+
+        retmx = A / np.vstack((A[0].astype(float), A[:-1].astype(float))) -1
+
+        ret_vc = np.mean(retmx, axis=0)
+        cov_mx = np.cov(retmx, rowvar=0)
+
+        self._config = OptimizerConfiguration(cov_mx, ret_vc)
+
+    def optimize(self, **kwargs):
+        """
+        Run the prep logic, set up the `Optimizer` and run the optimizer to calculate the best portfolio
+        with the price data in the given interval
+
+        :param **kwargs: the keyword arguments that are passed to Optimizer.optimize and should include min_return
+            for ConstrainedReturnOptimizationPolicy, specifying the minimum acceptable return
+
+        :rtype: OptimizerResult
+        :return: the optimization result
+        """
+
+        opt = Optimizer(self._config, ConstrainedReturnOptimizationPolicy())
+
+        return opt.optimize(**kwargs)
 
 
 class OptimizationPolicy:

@@ -1,5 +1,5 @@
 import random
-from core.optimize import OptimizerConfiguration, ConstrainedReturnOptimizationPolicy, OptimizationPolicy, Optimizer
+from core.optimize import OptimizerConfiguration, ConstrainedReturnOptimizationPolicy, OptimizationPolicy, Optimizer, KnownInstrumentOptimizationProblem
 from django.test import TestCase
 from django.utils.timezone import utc
 from model.models import *
@@ -140,3 +140,42 @@ class OptimizerTest(TestCase):
 
         result = self._optimizer.optimize(min_return = 1.5)
         self.assertFalse(result._is_optimal)
+
+class KnownInstrumentTester(TestCase):
+
+    fixtures = ["dump.json"]
+
+    def test_config_calculation(self):
+        a = datetime.datetime(2014,05,21,13,00,00)
+        b = datetime.datetime(2014,05,22,13,00,00)
+        prob = KnownInstrumentOptimizationProblem(["EURUSD", "GBPUSD", "GBPJPY"], a,b)
+
+        prob.prep_optimization_config()
+
+        r= prob._config._ret_vector
+        print r
+
+        self.assertAlmostEqual(r[0], 0.0000709)
+
+    def test_config_covar(self):
+        a = datetime.datetime(2014,05,21,13,00,00)
+        b = datetime.datetime(2014,05,22,13,00,00)
+        prob = KnownInstrumentOptimizationProblem(["EURUSD", "GBPUSD", "GBPJPY"], a,b)
+
+        prob.prep_optimization_config()
+
+        c = prob._config._cov_matrix
+        print c[0,0]
+
+        self.assertAlmostEqual(c[0,0], 0.2653e-6 )
+
+    def test_known_optimize(self):
+        a = datetime.datetime(2014,05,21,13,00,00)
+        b = datetime.datetime(2014,05,22,13,00,00)
+        prob = KnownInstrumentOptimizationProblem(["EURUSD", "GBPUSD", "GBPJPY"], a,b)
+
+        prob.prep_optimization_config()
+
+        res = prob.optimize(min_return=1.0e-4)
+
+        self.assertAlmostEqual(res._risk, 4.796719437920476e-04)

@@ -304,7 +304,7 @@ the timespan.</p>
 
 <dl class="class">
 <dt id="core.backtest.TesterResult">
-<em class="property">class </em><tt class="descclassname">core.backtest.</tt><tt class="descname">TesterResult</tt><big>(</big><em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/core/backtest.html#TesterResult"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.backtest.TesterResult" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">core.backtest.</tt><tt class="descname">TesterResult</tt><a class="reference internal" href="_modules/core/backtest.html#TesterResult"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.backtest.TesterResult" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class for encapsulating the backtest results. The class has several attributes:</p>
 <blockquote>
 <div>_return_pct     The percentage return for the portfolio, over the course of the backtest period
@@ -350,6 +350,43 @@ must be provided with a value of type float</p>
 </dd></dl>
 
 <dl class="class">
+<dt id="core.optimize.KnownInstrumentOptimizationProblem">
+<em class="property">class </em><tt class="descclassname">core.optimize.</tt><tt class="descname">KnownInstrumentOptimizationProblem</tt><big>(</big><em>inst_array</em>, <em>start_dt</em>, <em>end_dt</em><big>)</big><a class="reference internal" href="_modules/core/optimize.html#KnownInstrumentOptimizationProblem"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.optimize.KnownInstrumentOptimizationProblem" title="Permalink to this definition">¶</a></dt>
+<dd><p>The KnownInstrumentOptimizationProblem class encapsulates an optimization problem where the
+associated financial securities are already known to the system and some price data is
+available in the database.</p>
+<dl class="method">
+<dt id="core.optimize.KnownInstrumentOptimizationProblem.optimize">
+<tt class="descname">optimize</tt><big>(</big><em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/core/optimize.html#KnownInstrumentOptimizationProblem.optimize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.optimize.KnownInstrumentOptimizationProblem.optimize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run the prep logic, set up the <cite>Optimizer</cite> and run the optimizer to calculate the best portfolio
+with the price data in the given interval</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>**kwargs</strong> &#8211; <p>the keyword arguments that are passed to Optimizer.optimize and should include min_return
+for ConstrainedReturnOptimizationPolicy, specifying the minimum acceptable return</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">OptimizerResult</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">the optimization result</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.optimize.KnownInstrumentOptimizationProblem.prep_optimization_config">
+<tt class="descname">prep_optimization_config</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/core/optimize.html#KnownInstrumentOptimizationProblem.prep_optimization_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.optimize.KnownInstrumentOptimizationProblem.prep_optimization_config" title="Permalink to this definition">¶</a></dt>
+<dd><p>The method prepares the optimization config, filling the internal <cite>_config</cite> variable by calculating
+the covariance matrix and mean return vector for the problem with the data provided</p>
+<p>The calculation logic was benchmarked against MATLAB financial toolbox</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
 <dt id="core.optimize.OptimizationPolicy">
 <em class="property">class </em><tt class="descclassname">core.optimize.</tt><tt class="descname">OptimizationPolicy</tt><a class="reference internal" href="_modules/core/optimize.html#OptimizationPolicy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.optimize.OptimizationPolicy" title="Permalink to this definition">¶</a></dt>
 <dd><p>OptimizationPolicy is an abstract class that defines an interface for all portfolio optimization
@@ -377,7 +414,7 @@ problem.</p>
 </ul>
 <dl class="method">
 <dt id="core.optimize.Optimizer.optimize">
-<tt class="descname">optimize</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/core/optimize.html#Optimizer.optimize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.optimize.Optimizer.optimize" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">optimize</tt><big>(</big><em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/core/optimize.html#Optimizer.optimize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.optimize.Optimizer.optimize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Solve the optimization problem and return the resulting OptimizerResult object</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />

@@ -56,6 +56,7 @@
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">abstractmethod</span>
 <span class="kn">from</span> <span class="nn">django.utils</span> <span class="kn">import</span> <span class="n">simplejson</span>
+<span class="kn">from</span> <span class="nn">model.models</span> <span class="kn">import</span> <span class="n">Instrument</span><span class="p">,</span> <span class="n">Period</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">cvxopt.solvers</span> <span class="kn">import</span> <span class="n">qp</span>
 <span class="kn">import</span> <span class="nn">cvxopt</span> <span class="kn">as</span> <span class="nn">cvx</span>
@@ -95,7 +96,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_config</span> <span class="o">=</span> <span class="n">config</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_policy</span> <span class="o">=</span> <span class="n">policy</span>
 
-<div class="viewcode-block" id="Optimizer.optimize"><a class="viewcode-back" href="../../index.html#core.optimize.Optimizer.optimize">[docs]</a>    <span class="k">def</span> <span class="nf">optimize</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Optimizer.optimize"><a class="viewcode-back" href="../../index.html#core.optimize.Optimizer.optimize">[docs]</a>    <span class="k">def</span> <span class="nf">optimize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Solve the optimization problem and return the resulting OptimizerResult object</span>
 
@@ -103,7 +104,7 @@
 <span class="sd">        :rtype: OptimizerResult</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_policy</span><span class="o">.</span><span class="n">optimize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="o">.</span><span class="n">_cov_matrix</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="o">.</span><span class="n">_ret_vector</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_policy</span><span class="o">.</span><span class="n">optimize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="o">.</span><span class="n">_cov_matrix</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="o">.</span><span class="n">_ret_vector</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 
 </div></div>
@@ -133,9 +134,6 @@
 <span class="sd">        :returns: the configuration object</span>
 <span class="sd">        :rtype: OptimizerConfiguration</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cov_matrix</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ret_vector</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">)</span>
-
         <span class="c"># assert covariance matrix is square</span>
         <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">cov_matrix</span><span class="p">)</span>
         <span class="k">assert</span> <span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">s</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
@@ -153,10 +151,75 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_ret_vector</span> <span class="o">=</span> <span class="n">ret_vector</span>
 
 </div>
-<span class="k">class</span> <span class="nc">KnownInstrumentOptimizationProblem</span><span class="p">:</span>
-    <span class="k">pass</span>
+<div class="viewcode-block" id="KnownInstrumentOptimizationProblem"><a class="viewcode-back" href="../../index.html#core.optimize.KnownInstrumentOptimizationProblem">[docs]</a><span class="k">class</span> <span class="nc">KnownInstrumentOptimizationProblem</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The KnownInstrumentOptimizationProblem class encapsulates an optimization problem where the</span>
+<span class="sd">    associated financial securities are already known to the system and some price data is</span>
+<span class="sd">    available in the database.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inst_array</span><span class="p">,</span> <span class="n">start_dt</span><span class="p">,</span> <span class="n">end_dt</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The constructor method for the class</span>
 
+<span class="sd">        :param inst_array: is a list of strings that are instrument names, the portfolio optimization problem</span>
+<span class="sd">            will run on these instruments</span>
+<span class="sd">        :type inst_array: list</span>
+
+<span class="sd">        :param start_dt: the start datetime for which the data will be pulled, calculating optimization</span>
+<span class="sd">            parameters</span>
+<span class="sd">        :type start_dt: datetime</span>
+
+<span class="sd">        :param end_dt: the end datetime for which the data will be pulled, calculating optimization</span>
+<span class="sd">            parameters</span>
+<span class="sd">        :type end_dt: datetime</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">prices</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">iname</span> <span class="ow">in</span> <span class="n">inst_array</span><span class="p">:</span>
+            <span class="n">i</span> <span class="o">=</span> <span class="n">Instrument</span><span class="o">.</span><span class="n">get_instrument</span><span class="p">(</span><span class="n">iname</span><span class="p">)</span>
+            <span class="n">price_i</span> <span class="o">=</span> <span class="n">i</span><span class="o">.</span><span class="n">get_bar_collection_timeframe</span><span class="p">(</span><span class="n">Period</span><span class="o">.</span><span class="n">get_period</span><span class="p">(</span><span class="s">&quot;H1&quot;</span><span class="p">),</span> <span class="n">start_dt</span><span class="p">,</span> <span class="n">end_dt</span><span class="p">)</span>
+            <span class="n">prices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">price_i</span><span class="p">)</span>
+
+        <span class="n">z</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">prices</span><span class="p">:</span>
+            <span class="n">z</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">matrix</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_p_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+
+<div class="viewcode-block" id="KnownInstrumentOptimizationProblem.prep_optimization_config"><a class="viewcode-back" href="../../index.html#core.optimize.KnownInstrumentOptimizationProblem.prep_optimization_config">[docs]</a>    <span class="k">def</span> <span class="nf">prep_optimization_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The method prepares the optimization config, filling the internal `_config` variable by calculating</span>
+<span class="sd">        the covariance matrix and mean return vector for the problem with the data provided</span>
+
+<span class="sd">        The calculation logic was benchmarked against MATLAB financial toolbox</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">A</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_p_matrix</span>
+
+        <span class="n">retmx</span> <span class="o">=</span> <span class="n">A</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">A</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">),</span> <span class="n">A</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)))</span> <span class="o">-</span><span class="mi">1</span>
+
+        <span class="n">ret_vc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">retmx</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">cov_mx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cov</span><span class="p">(</span><span class="n">retmx</span><span class="p">,</span> <span class="n">rowvar</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_config</span> <span class="o">=</span> <span class="n">OptimizerConfiguration</span><span class="p">(</span><span class="n">cov_mx</span><span class="p">,</span> <span class="n">ret_vc</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="KnownInstrumentOptimizationProblem.optimize"><a class="viewcode-back" href="../../index.html#core.optimize.KnownInstrumentOptimizationProblem.optimize">[docs]</a>    <span class="k">def</span> <span class="nf">optimize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Run the prep logic, set up the `Optimizer` and run the optimizer to calculate the best portfolio</span>
+<span class="sd">        with the price data in the given interval</span>
+
+<span class="sd">        :param **kwargs: the keyword arguments that are passed to Optimizer.optimize and should include min_return</span>
+<span class="sd">            for ConstrainedReturnOptimizationPolicy, specifying the minimum acceptable return</span>
+
+<span class="sd">        :rtype: OptimizerResult</span>
+<span class="sd">        :return: the optimization result</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">opt</span> <span class="o">=</span> <span class="n">Optimizer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_config</span><span class="p">,</span> <span class="n">ConstrainedReturnOptimizationPolicy</span><span class="p">())</span>
+
+        <span class="k">return</span> <span class="n">opt</span><span class="o">.</span><span class="n">optimize</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+</div></div>
 <div class="viewcode-block" id="OptimizationPolicy"><a class="viewcode-back" href="../../index.html#core.optimize.OptimizationPolicy">[docs]</a><span class="k">class</span> <span class="nc">OptimizationPolicy</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    OptimizationPolicy is an abstract class that defines an interface for all portfolio optimization</span>
@@ -262,7 +325,7 @@
 <span class="sd">        :rtype: str</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">dc</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s">&quot;weights&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="p">,</span>
+            <span class="s">&quot;weights&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_weights</span><span class="p">),</span>
             <span class="s">&quot;risk&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_risk</span><span class="p">,</span>
             <span class="s">&quot;return&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_return</span><span class="p">,</span>
             <span class="s">&quot;is_optimal&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_optimal</span>
