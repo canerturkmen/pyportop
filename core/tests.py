@@ -1,5 +1,5 @@
 import random
-from core.optimize import OptimizerConfiguration
+from core.optimize import OptimizerConfiguration, ConstrainedReturnOptimizationPolicy, OptimizationPolicy, Optimizer
 from django.test import TestCase
 from django.utils.timezone import utc
 from model.models import *
@@ -82,8 +82,59 @@ class OptimizerConfigurationTest(TestCase):
         oc = OptimizerConfiguration(cov_matrix, ret_vector)
         self.assertIsNotNone(oc)
 
-#class OptimizerTest(TestCase):
-#    # Test the Optimizer itself
-#
-#    _covmx = None # covariance matrix
-#    _
+class OptimizerTest(TestCase):
+    # Test the Optimizer itself
+    # Test cases are derived with MATLAB's portopt
+
+    _covmx = np.array([[1.2, 1.3, 1.5],
+                       [1.3, .8, .9],
+                       [1.5, .9, 1.7]]) # covariance matrix
+    _retvc = np.array([0.5, 0.9, 1.4])
+
+    def test_initalize_config(self):
+        config = OptimizerConfiguration(self._covmx, self._retvc)
+        self.assertIsNotNone(config)
+
+    def test_initialize_policy(self):
+        self._policy = ConstrainedReturnOptimizationPolicy()
+        self.assertIsInstance(self._policy, OptimizationPolicy)
+
+    def test_initialize_optimizer(self):
+        config = OptimizerConfiguration(self._covmx, self._retvc)
+        self._policy = ConstrainedReturnOptimizationPolicy()
+        self._optimizer = Optimizer(config, self._policy)
+        self.assertIsNotNone(self._optimizer)
+
+    def test_run_optimizer_normal(self):
+        config = OptimizerConfiguration(self._covmx, self._retvc)
+        self._policy = ConstrainedReturnOptimizationPolicy()
+        self._optimizer = Optimizer(config, self._policy)
+
+        result = self._optimizer.optimize(min_return = 1.2)
+        self.assertTrue(result._is_optimal)
+        self.assertAlmostEqual(result._return, 1.2, places=2)
+        self.assertAlmostEqual(result._risk, 1.0826, places=2)
+
+        w = list(result._weights)
+        self.assertAlmostEqual(w[2], 0.6, places=2)
+
+    def test_run_optimizer_boundary(self):
+        # run the optimizer on the upper boundary (max return that can be achieved)
+
+        config = OptimizerConfiguration(self._covmx, self._retvc)
+        self._policy = ConstrainedReturnOptimizationPolicy()
+        self._optimizer = Optimizer(config, self._policy)
+
+        result = self._optimizer.optimize(min_return = 1.4)
+        self.assertTrue(result._is_optimal)
+        self.assertAlmostEqual(result._return, 1.4,places=2)
+        self.assertAlmostEqual(result._risk, 1.3038,places=2)
+
+    def test_run_optimizer_suboptimal(self):
+
+        config = OptimizerConfiguration(self._covmx, self._retvc)
+        self._policy = ConstrainedReturnOptimizationPolicy()
+        self._optimizer = Optimizer(config, self._policy)
+
+        result = self._optimizer.optimize(min_return = 1.5)
+        self.assertFalse(result._is_optimal)
