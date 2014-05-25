@@ -6,6 +6,7 @@ documentation are intended as REST API documentations and may be found below.
 
 import dateutil.parser
 from core.backtest import TesterConfiguration, Tester
+from core.optimize import *
 from django.http import HttpResponse
 
 # Create your views here.
@@ -101,4 +102,15 @@ def optimize(req):
                 "weights": [0, 0.8, 0.2]
             }
     """
-    pass
+    data = json.loads(req.body)
+
+    cov_mx = np.array(data.get("covariance"))
+    ret_vc = np.array(data.get("returns"))
+
+    config = OptimizerConfiguration(cov_mx, ret_vc)
+    policy = ConstrainedReturnOptimizationPolicy()
+
+    opt = Optimizer(config, policy)
+    soln = opt.optimize()
+
+    return HttpResponse(soln.to_json(), mimetype="application/json")
