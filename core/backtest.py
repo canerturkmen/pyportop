@@ -1,4 +1,5 @@
 import datetime
+from django.utils import simplejson
 from model.models import Instrument
 import numpy as np
 
@@ -22,6 +23,7 @@ class Tester:
         """
         Constructor method for the ``Tester`` class
 
+        :rtype : Tester
         :param configuration: TesterConfiguration object, initialization parameters of the instruments
         :type configuration: core.backtest.TesterConfiguration
 
@@ -110,16 +112,25 @@ class TesterConfiguration():
         if len(instruments) != len(weights):
             raise IllegalArgumentException("Number of weights and instruments must match")
 
+        iobjects = []
+        for i in instruments:
+            iobjects.append(Instrument.get_instrument(i))
+
         arr = np.array(weights)
         if np.sum(np.absolute(arr)) > 1:
             raise IllegalArgumentException("The weights must add up to 1!")
 
-        self.instruments = instruments
+        self.instruments = iobjects
         self.weights     = weights
 
 class TesterResult():
     """
-    Backtest results
+    Class for encapsulating the backtest results. The class has several attributes:
+
+        _return_pct     The percentage return for the portfolio, over the course of the backtest period
+        _return_nominal The return for the portfolio in nominal terms
+        _max_nominal    The maximum value the portfolio achieves during the timespan
+        _min_nominal    The minimum value the portfolio drops to during the timespan
     """
     _return_pct          = 0
     _return_nominal      = 0
@@ -131,3 +142,11 @@ class TesterResult():
 
         """
         pass
+
+    def stringify(self):
+        return simplejson.dumps({
+            "return_pct": self._return_pct,
+            "return_nominal": self._return_nominal,
+            "max_nominal": self._max_nominal,
+            "min_nominal": self._min_nominal
+        })

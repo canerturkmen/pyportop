@@ -1,0 +1,288 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>model.models &mdash; Portfolio Optimization Module (POM) v0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     'v0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Portfolio Optimization Module (POM) v0.1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../http-routingtable.html" title="HTTP Routing Table"
+             >routing table</a> |</li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Portfolio Optimization Module (POM) v0.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for model.models</h1><div class="highlight"><pre>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">timedelta</span>
+<span class="kn">from</span> <span class="nn">django.db.models</span> <span class="kn">import</span> <span class="o">*</span>
+
+
+<div class="viewcode-block" id="Instrument"><a class="viewcode-back" href="../../index.html#model.models.Instrument">[docs]</a><span class="k">class</span> <span class="nc">Instrument</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Model encapsulates a single trading instrument (a.k.a security) in the POM system,</span>
+<span class="sd">    in most of the anticipated cases a Forex trading pair.</span>
+
+<span class="sd">    The model includes the following attributes:</span>
+
+<span class="sd">    - *name* ``CharField``          The name of the instrument in ISO4217 pair names</span>
+<span class="sd">    - *description* ``CharField``   The description, if any, for the instrument</span>
+<span class="sd">    - *is_forex* ``BooleanField``   Currently unused</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">name</span>        <span class="o">=</span> <span class="n">CharField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">max_length</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="n">CharField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">max_length</span><span class="o">=</span><span class="mi">150</span><span class="p">)</span>
+    <span class="n">is_forex</span>    <span class="o">=</span> <span class="n">BooleanField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Instrument.get_ccy1"><a class="viewcode-back" href="../../index.html#model.models.Instrument.get_ccy1">[docs]</a>    <span class="k">def</span> <span class="nf">get_ccy1</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the 1st currency (CCY1) in the pair (i.e. base currency)</span>
+
+<span class="sd">        :returns: ISO 4217 format currency pair name of CCY1</span>
+<span class="sd">        :rtype: str</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="Instrument.get_ccy2"><a class="viewcode-back" href="../../index.html#model.models.Instrument.get_ccy2">[docs]</a>    <span class="k">def</span> <span class="nf">get_ccy2</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the 2nd currency (CCY2) in the pair,</span>
+
+<span class="sd">        :returns: ISO 4217 format currency pair name of CCY2</span>
+<span class="sd">        :rtype: str</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">[</span><span class="mi">3</span><span class="p">:</span><span class="mi">7</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="Instrument.get_bar_collection"><a class="viewcode-back" href="../../index.html#model.models.Instrument.get_bar_collection">[docs]</a>    <span class="k">def</span> <span class="nf">get_bar_collection</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">period</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the set of bar objects that belong to a certain instrument, for a given periodicity</span>
+
+<span class="sd">        :param period: the period for the data, if no data for this periodicity is available, no data will be returned</span>
+<span class="sd">        :type period: model.models.Period</span>
+
+<span class="sd">        :returns: an ordered list of IBar objects</span>
+<span class="sd">        :rtype: list</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">IBar</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">instrument</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">period</span><span class="o">=</span><span class="n">period</span><span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s">&quot;start_time&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="Instrument.get_bar_collection_timeframe"><a class="viewcode-back" href="../../index.html#model.models.Instrument.get_bar_collection_timeframe">[docs]</a>    <span class="k">def</span> <span class="nf">get_bar_collection_timeframe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">period</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Returns the set of bar objects that belong to a certain instrument, for a given periodicity, and between</span>
+<span class="sd">        a given start and end time</span>
+
+<span class="sd">        :param period: the periodicity for the date, if no data for this periodicity is available, no data will be returned</span>
+<span class="sd">        :type period: model.models.Period</span>
+<span class="sd">        :param start: the start datetime for the data</span>
+<span class="sd">        :type start: datetime.datetime</span>
+<span class="sd">        :param end: the end datetime for the data</span>
+<span class="sd">        :type end: datetime.datetime</span>
+
+<span class="sd">        :returns: an ordered list of IBar objects</span>
+<span class="sd">        :rtype: list</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">IBar</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">instrument</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">period</span><span class="o">=</span><span class="n">period</span><span class="p">,</span> <span class="n">start_time__gte</span><span class="o">=</span><span class="n">start</span><span class="p">,</span> <span class="n">start_time__lte</span><span class="o">=</span><span class="n">end</span><span class="p">)</span>\
+                                    <span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s">&quot;start_time&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">all</span><span class="p">()</span>
+        <span class="k">pass</span>
+</div>
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="Instrument.get_instrument"><a class="viewcode-back" href="../../index.html#model.models.Instrument.get_instrument">[docs]</a>    <span class="k">def</span> <span class="nf">get_instrument</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">inst</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Class method for retrieving an Instrument instantiation (persisted) by providing the name</span>
+
+<span class="sd">        :param inst: the name for the instrument</span>
+<span class="sd">        :type inst: str</span>
+
+<span class="sd">        :returns: the Instrument object (if any)</span>
+<span class="sd">        :rtype: Instrument</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">cls</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">inst</span><span class="p">)</span>
+
+
+
+</div></div>
+<div class="viewcode-block" id="Period"><a class="viewcode-back" href="../../index.html#model.models.Period">[docs]</a><span class="k">class</span> <span class="nc">Period</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Model for a timeframe object that is common to most financial security charts (e.g. H1, H4, M5)</span>
+
+<span class="sd">    The naming convention is as follows: the first character of the `name` string is the time unit</span>
+<span class="sd">    (``&#39;M&#39;`` = minute, ``&#39;H&#39;`` = hour, ``&#39;D&#39;`` = day) and the rest of the string is the number of units for</span>
+<span class="sd">    the timespan.</span>
+
+<span class="sd">    The only attribute of the class is as follows:</span>
+
+<span class="sd">    - *name*   ``CharField``: the name of the period, in the manner explained above</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">name</span> <span class="o">=</span> <span class="n">CharField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">max_length</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Period.get_numeric"><a class="viewcode-back" href="../../index.html#model.models.Period.get_numeric">[docs]</a>    <span class="k">def</span> <span class="nf">get_numeric</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the number part of the period</span>
+
+<span class="sd">        :returns: the numeric part of the field</span>
+<span class="sd">        :rtype: int</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+</div>
+<div class="viewcode-block" id="Period.get_unit_letter"><a class="viewcode-back" href="../../index.html#model.models.Period.get_unit_letter">[docs]</a>    <span class="k">def</span> <span class="nf">get_unit_letter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the first letter of the period(resolution) identifier (the unit)</span>
+
+<span class="sd">        :returns: the letter part of the period name</span>
+<span class="sd">        :rtype: str</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">[:</span><span class="mi">1</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="Period.get_py_tdelta"><a class="viewcode-back" href="../../index.html#model.models.Period.get_py_tdelta">[docs]</a>    <span class="k">def</span> <span class="nf">get_py_tdelta</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get a pythonic ``timedelta`` object for the period implied by the number</span>
+
+<span class="sd">        :returns: the timedelta object, None if the identifier is invalid</span>
+<span class="sd">        :rtype: timedelta</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">get_unit</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span> <span class="p">:</span> <span class="p">{</span>
+                        <span class="s">&quot;M&quot;</span><span class="p">:</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+                        <span class="s">&quot;H&quot;</span><span class="p">:</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="mi">60</span><span class="p">),</span>
+                        <span class="s">&quot;D&quot;</span><span class="p">:</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+                        <span class="s">&quot;W&quot;</span><span class="p">:</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
+                    <span class="p">}</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+
+        <span class="n">numeric</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_numeric</span><span class="p">()</span>
+
+        <span class="c"># if the numeric part is not 0</span>
+        <span class="k">if</span> <span class="n">numeric</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">get_unit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_unit_letter</span><span class="p">())</span> <span class="o">*</span> <span class="n">numeric</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">None</span>
+</div>
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="Period.get_period"><a class="viewcode-back" href="../../index.html#model.models.Period.get_period">[docs]</a>    <span class="k">def</span> <span class="nf">get_period</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">pname</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Class method for retrieving a ``Period`` object (persisted) by providing the name.</span>
+
+<span class="sd">        :param pname: the period name in the naming convention explained in the class documentation</span>
+<span class="sd">        :type pname: str</span>
+
+<span class="sd">        :returns: the Period object</span>
+<span class="sd">        :rtype: Period</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">cls</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">pname</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+</div></div>
+<div class="viewcode-block" id="IBar"><a class="viewcode-back" href="../../index.html#model.models.IBar">[docs]</a><span class="k">class</span> <span class="nc">IBar</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Model encapsulates a single timespan price data of an instrument in the POM system.</span>
+
+<span class="sd">    Attributes of the object are as follows:</span>
+
+<span class="sd">    - *start_time*      ``DateTimeField``   The start date time of the timespan implied by the ``IBar`` object</span>
+<span class="sd">    - *open*            ``FloatField``      The opening price of the instrument in the timespan</span>
+<span class="sd">    - *high*            ``FloatField``      The highest price of the instrument in the timespan</span>
+<span class="sd">    - *low*             ``FloatField``      The lowest price of the instrument in the timespan</span>
+<span class="sd">    - *close*           ``FloatField``      The closing price of the instrument in the timespan</span>
+<span class="sd">    - *period*          ``ForeignKey``      Reference to the ``Period`` object</span>
+<span class="sd">    - *instrument*      ``ForeignKey``      Reference to the ``Instrument`` object</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">start_time</span>  <span class="o">=</span> <span class="n">DateTimeField</span><span class="p">(</span><span class="n">auto_now</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">null</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+    <span class="nb">open</span>        <span class="o">=</span> <span class="n">FloatField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">high</span>        <span class="o">=</span> <span class="n">FloatField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">low</span>         <span class="o">=</span> <span class="n">FloatField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">close</span>       <span class="o">=</span> <span class="n">FloatField</span><span class="p">(</span><span class="n">null</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">period</span>      <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">to</span><span class="o">=</span><span class="n">Period</span><span class="p">)</span>
+    <span class="n">instrument</span>  <span class="o">=</span> <span class="n">ForeignKey</span><span class="p">(</span><span class="n">to</span><span class="o">=</span><span class="n">Instrument</span><span class="p">)</span>
+
+<div class="viewcode-block" id="IBar.get_avg_price"><a class="viewcode-back" href="../../index.html#model.models.IBar.get_avg_price">[docs]</a>    <span class="k">def</span> <span class="nf">get_avg_price</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the average price implied by the ``IBar`` object, calculated as the average of opening and closing prices</span>
+
+<span class="sd">        :returns: the average price of the bar</span>
+<span class="sd">        :rtype: float</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">open</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">close</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+</pre></div></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../http-routingtable.html" title="HTTP Routing Table"
+             >routing table</a> |</li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Portfolio Optimization Module (POM) v0.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, AC Turkmen.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

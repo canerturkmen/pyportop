@@ -4,4 +4,5 @@ nose==1.3.3
 wsgiref==0.1.2
 numpy
 cvxopt
-
+python-dateutil
+sphinx

@@ -1,0 +1,203 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>core.views &mdash; Portfolio Optimization Module (POM) v0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     'v0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Portfolio Optimization Module (POM) v0.1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../http-routingtable.html" title="HTTP Routing Table"
+             >routing table</a> |</li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Portfolio Optimization Module (POM) v0.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for core.views</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">The ``views`` module includes the REST API function implementations for the POM software. Their corresponding</span>
+<span class="sd">documentation are intended as REST API documentations and may be found below.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">import</span> <span class="nn">dateutil.parser</span>
+<span class="kn">from</span> <span class="nn">core.backtest</span> <span class="kn">import</span> <span class="n">TesterConfiguration</span><span class="p">,</span> <span class="n">Tester</span>
+<span class="kn">from</span> <span class="nn">django.http</span> <span class="kn">import</span> <span class="n">HttpResponse</span>
+
+<span class="c"># Create your views here.</span>
+<span class="kn">from</span> <span class="nn">django.utils</span> <span class="kn">import</span> <span class="n">simplejson</span> <span class="k">as</span> <span class="n">json</span>
+<span class="kn">from</span> <span class="nn">model.models</span> <span class="kn">import</span> <span class="n">Period</span>
+
+<div class="viewcode-block" id="backtest"><a class="viewcode-back" href="../../index.html#core.views.backtest">[docs]</a><span class="k">def</span> <span class="nf">backtest</span><span class="p">(</span><span class="n">req</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    View controller for the REST API implementation of the backtest function.</span>
+
+
+<span class="sd">    .. http:post:: /backtest/</span>
+
+<span class="sd">        :jsonparam array instruments: list of instrument names</span>
+<span class="sd">        :jsonparam array weights: list of floating point numbers (JSON Array) for the portfolio weights</span>
+<span class="sd">        :jsonparam string start-date: Start date time for the backtest in ISO Datetime format</span>
+<span class="sd">        :jsonparam string end-date: End date time for the backtest in ISO Datetime format</span>
+<span class="sd">        :jsonparam string period: The period specifier (&quot;H1&quot;, &quot;M5&quot;, etc.)</span>
+
+<span class="sd">        **Example response**:</span>
+
+<span class="sd">        .. sourcecode:: http</span>
+
+<span class="sd">            HTTP/1.1 200 OK</span>
+<span class="sd">            Vary: Accept</span>
+<span class="sd">            Content-Type: text/javascript</span>
+
+<span class="sd">            {</span>
+<span class="sd">                &quot;return_pct&quot;: 0.23, //the portfolio return in ratio terms</span>
+<span class="sd">                &quot;return_nominal&quot;: 230, //the portfolio return in nominal terms</span>
+<span class="sd">                &quot;max_nominal&quot;: 320, //the maximum nominal value of the portfolio in the test timeframe</span>
+<span class="sd">                &quot;min_nominal&quot;: 120 // the minimum nominal value of the portfolio in the test timeframe</span>
+<span class="sd">            }</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">req</span><span class="o">.</span><span class="n">body</span><span class="p">)</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">TesterConfiguration</span><span class="p">(</span><span class="n">instruments</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;instruments&quot;</span><span class="p">),</span>
+                                 <span class="n">weights</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;weights&quot;</span><span class="p">))</span>
+
+    <span class="n">start_dt</span> <span class="o">=</span> <span class="n">dateutil</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;start-date&quot;</span><span class="p">))</span>
+    <span class="n">end_dt</span>  <span class="o">=</span> <span class="n">dateutil</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;end-date&quot;</span><span class="p">))</span>
+
+    <span class="n">period</span> <span class="o">=</span> <span class="n">Period</span><span class="o">.</span><span class="n">get_period</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;period&quot;</span><span class="p">))</span>
+
+    <span class="c"># initialize the tester</span>
+    <span class="n">tester</span> <span class="o">=</span> <span class="n">Tester</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">start_dt</span><span class="p">,</span> <span class="n">end_dt</span><span class="p">,</span> <span class="n">period</span><span class="p">)</span>
+
+    <span class="c"># run the tester</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">tester</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">HttpResponse</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">stringify</span><span class="p">(),</span> <span class="n">mimetype</span><span class="o">=</span><span class="s">&quot;application/json&quot;</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="optimize"><a class="viewcode-back" href="../../index.html#core.views.optimize">[docs]</a><span class="k">def</span> <span class="nf">optimize</span><span class="p">(</span><span class="n">req</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    View controller for the REST API implementation of the portfolio optimization function. The current API</span>
+<span class="sd">    function solves a constrained return optimization problem (minimizing risk), by taking a covariance matrix</span>
+<span class="sd">    and returns vector.</span>
+
+<span class="sd">    The covariance matrix and returns vector must be provided to the API in the notations given below, and the</span>
+<span class="sd">    ordering of instruments in the matrix and the returns vector MUST be the same.</span>
+
+<span class="sd">    .. http:post:: /optimize/</span>
+
+<span class="sd">        :jsonparam array covariance: the covariance matrix, must be given as an array of arrays, with each array</span>
+<span class="sd">            representing a row of the covariance matrix. The matrix must be a square matrix of at least 2x2</span>
+<span class="sd">        :jsonparam array returns: array of floats, each pertaining to the return of a certain instrument</span>
+
+
+<span class="sd">        **Example request**:</span>
+
+<span class="sd">        .. sourcecode:: http</span>
+
+<span class="sd">            POST /optimize/ HTTP/1.1</span>
+<span class="sd">            Host: example.com</span>
+<span class="sd">            Accept: application/json, text/javascript</span>
+
+<span class="sd">            {</span>
+<span class="sd">                &quot;covariance&quot;: [[1.23, 1.56, 1.41],</span>
+<span class="sd">                                [1.56, 1.9, 2.0],</span>
+<span class="sd">                                [1.41, 2.0, 1.4]], // the covariance matrix, each sub-array corresponds to a row</span>
+<span class="sd">                &quot;returns&quot;: [0.9, 1.2, 1.4]</span>
+<span class="sd">            }</span>
+
+<span class="sd">        **Example response**:</span>
+
+<span class="sd">        .. sourcecode:: http</span>
+
+<span class="sd">            HTTP/1.1 200 OK</span>
+<span class="sd">            Vary: Accept</span>
+<span class="sd">            Content-Type: text/javascript</span>
+
+<span class="sd">            {</span>
+<span class="sd">                &quot;weights&quot;: [0, 0.8, 0.2]</span>
+<span class="sd">            }</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../http-routingtable.html" title="HTTP Routing Table"
+             >routing table</a> |</li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Portfolio Optimization Module (POM) v0.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, AC Turkmen.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>
