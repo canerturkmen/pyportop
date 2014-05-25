@@ -3,7 +3,6 @@ The ``views`` module includes the REST API function implementations for the POM 
 documentation are intended as REST API documentations and may be found below.
 """
 
-
 import dateutil.parser
 from core.backtest import TesterConfiguration, Tester
 from core.optimize import *
@@ -111,6 +110,8 @@ def optimize(req):
 
     cov_mx = np.array(data.get("covariance"))
     ret_vc = np.array(data.get("returns"))
+
+    # todo: interface must be verbose with errors
 
     if data.get("min_return"):
         policy = ConstrainedReturnOptimizationPolicy()

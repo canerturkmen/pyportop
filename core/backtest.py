@@ -137,12 +137,6 @@ class TesterResult():
     _max_nominal         = 0
     _min_nominal         = 0
 
-    def __init__(self, **kwargs):
-        """
-
-        """
-        pass
-
     def stringify(self):
         return simplejson.dumps({
             "return_pct": self._return_pct,
