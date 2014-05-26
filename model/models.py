@@ -187,5 +187,3 @@ class IBar(Model):
         :rtype: float
         """
         return (self.open + self.close) / 2
-
-

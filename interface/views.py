@@ -108,7 +108,8 @@ def optimize(req):
                 "covariance": [[1.23, 1.56, 1.41],
                                 [1.56, 1.9, 2.0],
                                 [1.41, 2.0, 1.4]], // the covariance matrix, each sub-array corresponds to a row
-                "returns": [0.9, 1.2, 1.4]
+                "returns": [0.9, 1.2, 1.4],
+                "min_return": 1.2
             }
 
         **Example response**:
@@ -124,6 +125,12 @@ def optimize(req):
             }
     """
     data = json.loads(req.body)
+
+    # check for missing parameters
+    keys = ["covariance", "returns", "min_return"]
+    for k in keys:
+        if data.get(k) is None:
+            return throw_error_over_json("One of your parameters: %s is missing!" % k)
 
     cov_mx = np.array(data.get("covariance"))
     ret_vc = np.array(data.get("returns"))
