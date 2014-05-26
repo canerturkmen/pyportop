@@ -137,7 +137,7 @@ def optimize(req):
 
     # todo: interface must be verbose with errors
 
-    if data.get("min_return"):
+    try:
         policy = ConstrainedReturnOptimizationPolicy()
         config = OptimizerConfiguration(cov_mx, ret_vc)
 
@@ -145,6 +145,7 @@ def optimize(req):
         soln = opt.optimize(min_return = data.get("min_return"))
 
         return HttpResponse(soln.to_json(), mimetype="application/json")
-    else:
-        # normally other policies should appear here
-        return HttpResponse("You must provide a 'min_return' parameter", mimetype="application/json")
+    except AssertionError as e:
+        return throw_error_over_json(e.message)
+    except:
+        return throw_error_over_json("An unexpected error occured")

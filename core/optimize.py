@@ -82,16 +82,20 @@ class OptimizerConfiguration:
         """
         # assert covariance matrix is square
         s = np.shape(cov_matrix)
-        assert s[0] == s[1]
+
+        if not s[0] == s[1]:
+            raise AssertionError("You must provide a square matrix!")
 
         # infer number of instruments from cov matrix
         n = s[0]
 
         # assert the cov matrix is symmetric
-        assert np.allclose(cov_matrix, cov_matrix.T)
+        if not np.allclose(cov_matrix, cov_matrix.T):
+            raise AssertionError("The covariance matrix provided should be symmetric")
 
         # assert the number of elements in the returns vector equal to N
-        assert n == np.shape(ret_vector)[0]
+        if not n == np.shape(ret_vector)[0]:
+            raise AssertionError("The number of assets in the covariance matrix and the mean-return vector must match")
 
         self._cov_matrix = cov_matrix
         self._ret_vector = ret_vector

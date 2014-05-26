@@ -162,7 +162,7 @@ class OptimizeAPITest(TestCase):
         result = simplejson.loads(res._get_content())
 
         self.assertIsNotNone(result.get("error"))
-        self.assertContains(res, "dimensions") # the error message must talk about dimensions
+        self.assertContains(res, "number of assets") # the error message must talk about dimensions
 
     def test_missing_parameter(self):
         # fail if one of the parameters is missing
